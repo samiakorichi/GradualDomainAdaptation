@@ -230,18 +230,29 @@ def get_preprocessed_mnist():
     test_x = np.expand_dims(np.array(test_x), axis=-1)
     return (train_x, train_y), (test_x, test_y)
 
-def get_preprocessed_mnist_simple():
-    (train_x, train_y), (test_x, test_y) = mnist.load_data()
+# def get_preprocessed_mnist_simple():
+  #  (train_x, train_y), (test_x, test_y) = mnist.load_data()
 
-    train_x, test_x = train_x / 255.0, test_x / 255.0
+   # train_x, test_x = train_x / 255.0, test_x / 255.0
 
     # Flatten the image into a one-dimensional vector: from (28, 28) to (784,)
-    train_x = train_x.reshape(train_x.shape[0], -1)  # (60000, 784)
-    test_x = test_x.reshape(test_x.shape[0], -1)     # (10000, 784)
+    #train_x = train_x.reshape(train_x.shape[0], -1)  # (60000, 784)
+    #test_x = test_x.reshape(test_x.shape[0], -1)     # (10000, 784)
 
     # Randomly shuffle the training set
-    train_x, train_y = shuffle(train_x, train_y,random_state=42)
+    # train_x, train_y = shuffle(train_x, train_y,random_state=42)
     
+    # return (train_x, train_y), (test_x, test_y)
+
+
+from sklearn.utils import shuffle  # Make sure this is the shuffle being used
+
+def get_preprocessed_mnist_simple():
+    (train_x, train_y), (test_x, test_y) = mnist.load_data()
+    train_x, test_x = train_x / 255.0, test_x / 255.0
+    train_x, train_y = shuffle(train_x, train_y, random_state=42)  # Use shuffle with random_state
+    train_x = np.expand_dims(np.array(train_x), axis=-1)
+    test_x = np.expand_dims(np.array(test_x), axis=-1)
     return (train_x, train_y), (test_x, test_y)
 
 
