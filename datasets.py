@@ -4,6 +4,7 @@ import numpy as np
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.datasets import cifar10
+from sklearn.utils import shuffle
 import scipy.io
 from scipy import ndimage
 from scipy.stats import ortho_group
