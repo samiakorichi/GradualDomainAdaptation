@@ -29,7 +29,7 @@ def new_model_simple():
     #     bootstrap=True,  # Utiliser le bootstrap pour améliorer la stabilité du modèle
     #     random_state=42  
     # )
-    # model = GaussianNB()
+    model = GaussianNB()
     # model = SVC(kernel='linear', probability=True, random_state=42, C=0.1, class_weight='balanced')
     # model = SVC(kernel='rbf', probability=True, random_state=42, C=1.0, gamma=0.1, class_weight='balanced')
     # model = LDA()
@@ -43,7 +43,7 @@ def new_model_simple():
     # force_col_wise=True,
     # verbosity=-1
     # )
-    model = DecisionTreeClassifier(max_depth=50, splitter='random')
+    #model = DecisionTreeClassifier(max_depth=50, splitter='random')
     return model
 
 def run_experiment_simple(
