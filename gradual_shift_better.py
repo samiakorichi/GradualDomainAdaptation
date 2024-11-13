@@ -112,39 +112,39 @@ def run_experiment_simple(
 
     
           # Calcul de la confiance pour le bootstrap direct
-          target_confidences = []
-          for i, x_batch in enumerate(dir_inter_x.reshape(-1, interval, *dir_inter_x.shape[1:])):
+            target_confidences = []
+            for i, x_batch in enumerate(dir_inter_x.reshape(-1, interval, *dir_inter_x.shape[1:])):
                             
-              probas = teacher.predict_proba(x_batch)
-              max_probas = probas.max(axis=1)
-              target_confidences.append(max_probas.mean())
+                probas = teacher.predict_proba(x_batch)
+                max_probas = probas.max(axis=1)
+                target_confidences.append(max_probas.mean())
               
     
-          for i, (acc, conf) in enumerate(zip(target_accuracies, target_confidences)):
+            for i, (acc, conf) in enumerate(zip(target_accuracies, target_confidences)):
                            
-              print(f"Précision après étape {i+1}: {acc * 100:.2f}% | Confiance moyenne: {conf * 100:.2f}%")
-              # Bootstrap direct vers toutes les données non supervisées
-              print("\n\n Bootstrap direct vers toutes les données non supervisées:")
-              teacher = new_model_simple()
-              teacher.fit(src_tr_x, src_tr_y)
-              all_accuracies, _ = utils.self_train_simple(
+                print(f"Précision après étape {i+1}: {acc * 100:.2f}% | Confiance moyenne: {conf * 100:.2f}%")
+                # Bootstrap direct vers toutes les données non supervisées
+                print("\n\n Bootstrap direct vers toutes les données non supervisées:")
+                teacher = new_model_simple()
+                teacher.fit(src_tr_x, src_tr_y)
+                all_accuracies, _ = utils.self_train_simple(
                   
                                     
                   student_func, teacher, inter_x, target_x=trg_eval_x,
                   target_y=trg_eval_y, repeats=num_repeats, soft=soft, confidence_q=conf_q)
     
-             # Calcul de la confiance pour toutes les données non supervisées
-             all_confidences = []
-             for i, x_batch in enumerate(inter_x.reshape(-1, interval, *inter_x.shape[1:])):
+               # Calcul de la confiance pour toutes les données non supervisées
+               all_confidences = []
+               for i, x_batch in enumerate(inter_x.reshape(-1, interval, *inter_x.shape[1:])):
                  
-                 probas = teacher.predict_proba(x_batch)
-                 max_probas = probas.max(axis=1)
-                 all_confidences.append(max_probas.mean())
+                   probas = teacher.predict_proba(x_batch)
+                   max_probas = probas.max(axis=1)
+                   all_confidences.append(max_probas.mean())
     
-             for i, (acc, conf) in enumerate(zip(all_accuracies, all_confidences)):
+               for i, (acc, conf) in enumerate(zip(all_accuracies, all_confidences)):
                  
                  
-                 print(f"Précision après étape {i+1}: {acc * 100:.2f}% | Confiance moyenne: {conf * 100:.2f}%")
+                   print(f"Précision après étape {i+1}: {acc * 100:.2f}% | Confiance moyenne: {conf * 100:.2f}%")
 
     return src_acc, target_acc, gradual_accuracies, target_accuracies, all_accuracies, gradual_confidences, target_confidences, all_confidences
 
