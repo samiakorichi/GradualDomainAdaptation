@@ -61,76 +61,90 @@ def run_experiment_simple(
         return teacher
 
     def run(seed):
-    utils.rand_seed(seed)
-    trg_eval_x = trg_val_x
-    trg_eval_y = trg_val_y
+              
+        utils.rand_seed(seed)
+        trg_eval_x = trg_val_x
+        trg_eval_y = trg_val_y
 
-    # Entraîner le modèle source.
-    source_model = new_model_simple()
-    source_model.fit(src_tr_x, src_tr_y)
-    src_acc = source_model.score(src_val_x, src_val_y)
-    target_acc = source_model.score(trg_eval_x, trg_eval_y)
-    print(f"Précision de validation source (seed {seed}): {src_acc * 100:.2f}%")
-    print(f"Précision de validation cible (seed {seed}): {target_acc * 100:.2f}%")
+        # Entraîner le modèle source.
+        source_model = new_model_simple()
+        source_model.fit(src_tr_x, src_tr_y)
+        src_acc = source_model.score(src_val_x, src_val_y)
+        target_acc = source_model.score(trg_eval_x, trg_eval_y)
+        print(f"Précision de validation source (seed {seed}): {src_acc * 100:.2f}%")
+        print(f"Précision de validation cible (seed {seed}): {target_acc * 100:.2f}%")
 
-    # Auto-entrainement graduel avec enregistrement des confiances
-    print("\n\n Auto-entrainement graduel:")
-    teacher = new_model_simple()
-    teacher.fit(src_tr_x, src_tr_y)
-    gradual_accuracies, student = utils.gradual_self_train_simple(
-        student_func, teacher, inter_x, inter_y, interval, soft=soft,
-        confidence_q=conf_q)
-    
+        # Auto-entrainement graduel avec enregistrement des confiances
+        print("\n\n Auto-entrainement graduel:")
+        teacher = new_model_simple()
+        teacher.fit(src_tr_x, src_tr_y)
+        gradual_accuracies, student = utils.gradual_self_train_simple(
+                             
+            student_func, teacher, inter_x, inter_y, interval, soft=soft,
+            confidence_q=conf_q)
+            
     # Calculer la confiance moyenne pour chaque étape d'auto-entraînement
-    gradual_confidences = []
-    for i, x_batch in enumerate(inter_x.reshape(-1, interval, *inter_x.shape[1:])):
-        probas = student.predict_proba(x_batch)  # Obtenir les probabilités de chaque classe
-        max_probas = probas.max(axis=1)  # Prendre la probabilité maximale pour chaque échantillon
-        mean_confidence = max_probas.mean()  # Calculer la confiance moyenne
-        gradual_confidences.append(mean_confidence)
+        gradual_confidences = []
+        for i, x_batch in enumerate(inter_x.reshape(-1, interval, *inter_x.shape[1:])):
+                                  
+            probas = student.predict_proba(x_batch)  # Obtenir les probabilités de chaque classe
+            max_probas = probas.max(axis=1)  # Prendre la probabilité maximale pour chaque échantillon
+            mean_confidence = max_probas.mean()  # Calculer la confiance moyenne
+            gradual_confidences.append(mean_confidence)              
+            acc = student.score(trg_eval_x, trg_eval_y)
+            gradual_accuracies.append(acc)
+            gradual_confidences.append(mean_confidence)  # Ajouter la dernière étape de confiance
+            
 
-    acc = student.score(trg_eval_x, trg_eval_y)
-    gradual_accuracies.append(acc)
-    gradual_confidences.append(mean_confidence)  # Ajouter la dernière étape de confiance
+        for i, (acc, conf) in enumerate(zip(gradual_accuracies, gradual_confidences)):
+                                   
+            print(f"Précision après étape {i+1}: {acc * 100:.2f}% | Confiance moyenne: {conf * 100:.2f}%")
 
-    for i, (acc, conf) in enumerate(zip(gradual_accuracies, gradual_confidences)):
-        print(f"Précision après étape {i+1}: {acc * 100:.2f}% | Confiance moyenne: {conf * 100:.2f}%")
+            # Bootstrap direct vers la cible
+            print("\n\n Bootstrap direct vers la cible:")
+            teacher = new_model_simple()
+            teacher.fit(src_tr_x, src_tr_y)
+            target_accuracies, _ = utils.self_train_simple(
+                
+                
+                student_func, teacher, dir_inter_x, target_x=trg_eval_x,
+                target_y=trg_eval_y, repeats=num_repeats, soft=soft, confidence_q=conf_q)
 
-    # Bootstrap direct vers la cible
-    print("\n\n Bootstrap direct vers la cible:")
-    teacher = new_model_simple()
-    teacher.fit(src_tr_x, src_tr_y)
-    target_accuracies, _ = utils.self_train_simple(
-        student_func, teacher, dir_inter_x, target_x=trg_eval_x,
-        target_y=trg_eval_y, repeats=num_repeats, soft=soft, confidence_q=conf_q)
     
-    # Calcul de la confiance pour le bootstrap direct
-    target_confidences = []
-    for i, x_batch in enumerate(dir_inter_x.reshape(-1, interval, *dir_inter_x.shape[1:])):
-        probas = teacher.predict_proba(x_batch)
-        max_probas = probas.max(axis=1)
-        target_confidences.append(max_probas.mean())
+          # Calcul de la confiance pour le bootstrap direct
+          target_confidences = []
+          for i, x_batch in enumerate(dir_inter_x.reshape(-1, interval, *dir_inter_x.shape[1:])):
+                            
+              probas = teacher.predict_proba(x_batch)
+              max_probas = probas.max(axis=1)
+              target_confidences.append(max_probas.mean())
+              
     
-    for i, (acc, conf) in enumerate(zip(target_accuracies, target_confidences)):
-        print(f"Précision après étape {i+1}: {acc * 100:.2f}% | Confiance moyenne: {conf * 100:.2f}%")
-
-    # Bootstrap direct vers toutes les données non supervisées
-    print("\n\n Bootstrap direct vers toutes les données non supervisées:")
-    teacher = new_model_simple()
-    teacher.fit(src_tr_x, src_tr_y)
-    all_accuracies, _ = utils.self_train_simple(
-        student_func, teacher, inter_x, target_x=trg_eval_x,
-        target_y=trg_eval_y, repeats=num_repeats, soft=soft, confidence_q=conf_q)
+          for i, (acc, conf) in enumerate(zip(target_accuracies, target_confidences)):
+                           
+              print(f"Précision après étape {i+1}: {acc * 100:.2f}% | Confiance moyenne: {conf * 100:.2f}%")
+              # Bootstrap direct vers toutes les données non supervisées
+              print("\n\n Bootstrap direct vers toutes les données non supervisées:")
+              teacher = new_model_simple()
+              teacher.fit(src_tr_x, src_tr_y)
+              all_accuracies, _ = utils.self_train_simple(
+                  
+                                    
+                  student_func, teacher, inter_x, target_x=trg_eval_x,
+                  target_y=trg_eval_y, repeats=num_repeats, soft=soft, confidence_q=conf_q)
     
-    # Calcul de la confiance pour toutes les données non supervisées
-    all_confidences = []
-    for i, x_batch in enumerate(inter_x.reshape(-1, interval, *inter_x.shape[1:])):
-        probas = teacher.predict_proba(x_batch)
-        max_probas = probas.max(axis=1)
-        all_confidences.append(max_probas.mean())
+             # Calcul de la confiance pour toutes les données non supervisées
+             all_confidences = []
+             for i, x_batch in enumerate(inter_x.reshape(-1, interval, *inter_x.shape[1:])):
+                 
+                 probas = teacher.predict_proba(x_batch)
+                 max_probas = probas.max(axis=1)
+                 all_confidences.append(max_probas.mean())
     
-    for i, (acc, conf) in enumerate(zip(all_accuracies, all_confidences)):
-        print(f"Précision après étape {i+1}: {acc * 100:.2f}% | Confiance moyenne: {conf * 100:.2f}%")
+             for i, (acc, conf) in enumerate(zip(all_accuracies, all_confidences)):
+                 
+                 
+                 print(f"Précision après étape {i+1}: {acc * 100:.2f}% | Confiance moyenne: {conf * 100:.2f}%")
 
     return src_acc, target_acc, gradual_accuracies, target_accuracies, all_accuracies, gradual_confidences, target_confidences, all_confidences
 
